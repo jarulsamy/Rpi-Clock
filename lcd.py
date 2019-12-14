@@ -63,20 +63,20 @@ def get_times(ALARM_TIME, weekdays_only=False):
         f"{tomorrow} {ALARM_TIME}", tomorrow_format) + timedelta(seconds=1)
     diff = alarm_time - datetime.now()
 
-    # days = diff.days
-    # hours, remainder = divmod(diff.seconds, 3600)
     hours, remainder = divmod(diff.seconds, 3600)
     if diff.days > 1:
         lcd_line_2 = f"{datetime.now().strftime('%a')}     {str(diff.days).zfill(2)}d {str(hours).zfill(2)}h"
+        alarm = False
     else:
         minutes, seconds = divmod(remainder, 60)
         hours = str(hours).zfill(2)
         minutes = str(minutes).zfill(2)
         seconds = str(seconds).zfill(2)
         lcd_line_2 = f"{datetime.now().strftime('%a')}     {hours}:{minutes}:{seconds}"
+        alarm = True
 
     lcd_line_1 = datetime.now().strftime(today_format) + "\n"
-    return lcd_line_1 + lcd_line_2
+    return lcd_line_1 + lcd_line_2, alarm
 
 
 def play_alarm(lcd, tone, duration):
@@ -145,13 +145,13 @@ def main():
 
     try:
         while True:
-            if datetime.now().strftime("%H:%M:%S") == ALARM_TIME.strftime("%H:%M:%S"):
-                play_alarm(lcd, TONE, DURATION)
-            elif (datetime.now() + timedelta(seconds=1)).strftime("%H:%M:%S") == ALARM_TIME.strftime("%H:%M:%S"):
-                play_alarm(lcd, TONE, DURATION)
-
-            lcd.message = get_times(
+            lcd.message, alarm = get_times(
                 ALARM_TIME.strftime("%H:%M"), WEEKDAYS_ONLY)
+            current_time = datetime.now()
+
+            if alarm:
+                if current_time.hour == ALARM_TIME.hour and current_time.minute == ALARM_TIME.minute and current_time.second == ALARM_TIME.second:
+                    play_alarm(lcd, TONE, DURATION)
 
             i = 0
             while GPIO.input(RED_BUTTON) == GPIO.HIGH:
