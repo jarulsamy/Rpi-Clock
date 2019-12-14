@@ -1,7 +1,8 @@
 {
     "ALARM": {
-        "TIME": "19:36:00",
+        "TIME": "06:00:00",
         "TONE": "BIB.mp3",
-        "DURATION": "30"
+        "DURATION": "30",
+        "WEEKDAYS_ONLY": "True"
     }
 }

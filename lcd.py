@@ -3,6 +3,7 @@
 # 16x2 LCD Alarm
 
 from time import sleep
+from distutils.util import strtobool
 from datetime import datetime, timedelta, date
 import RPi.GPIO as GPIO
 import adafruit_character_lcd.character_lcd as characterlcd
@@ -10,6 +11,7 @@ import subprocess
 import digitalio
 import board
 import json
+import os
 
 """
 BCM PINS
@@ -28,9 +30,12 @@ lcd_d5 = digitalio.DigitalInOut(board.D25)
 lcd_d6 = digitalio.DigitalInOut(board.D8)
 lcd_d7 = digitalio.DigitalInOut(board.D7)
 
+BACKLIGHT = 5
 GREEN_BUTTON = 17
 BLUE_BUTTON = 27
 RED_BUTTON = 22
+
+BACKLIGHT_STATUS = True
 
 
 def load_config(filename):
@@ -41,28 +46,36 @@ def load_config(filename):
         config["ALARM"]["TIME"], "%H:%M:%S")
     TONE = config["ALARM"]["TONE"]
     DURATION = int(config["ALARM"]["DURATION"])
-    return ALARM_TIME, TONE, DURATION
+    WEEKDAYS_ONLY = strtobool(config["ALARM"]["WEEKDAYS_ONLY"])
+    return ALARM_TIME, TONE, DURATION, WEEKDAYS_ONLY
 
 
-def get_times(ALARM_TIME):
+def get_times(ALARM_TIME, weekdays_only=False):
     tomorrow_format = "%Y-%m-%d %H:%M"
     today_format = "%b %d  %H:%M:%S"
 
     tomorrow = date.today() + timedelta(days=1)
+    if weekdays_only:
+        while tomorrow.weekday() > 4:
+            tomorrow += timedelta(days=1)
+
     alarm_time = datetime.strptime(
         f"{tomorrow} {ALARM_TIME}", tomorrow_format) + timedelta(seconds=1)
     diff = alarm_time - datetime.now()
 
-    days = diff.days
+    # days = diff.days
+    # hours, remainder = divmod(diff.seconds, 3600)
     hours, remainder = divmod(diff.seconds, 3600)
-    minutes, seconds = divmod(remainder, 60)
-
-    hours = str(hours).zfill(2)
-    minutes = str(minutes).zfill(2)
-    seconds = str(seconds).zfill(2)
+    if diff.days > 1:
+        lcd_line_2 = f"{datetime.now().strftime('%a')}     {str(diff.days).zfill(2)}d {str(hours).zfill(2)}h"
+    else:
+        minutes, seconds = divmod(remainder, 60)
+        hours = str(hours).zfill(2)
+        minutes = str(minutes).zfill(2)
+        seconds = str(seconds).zfill(2)
+        lcd_line_2 = f"{datetime.now().strftime('%a')}     {hours}:{minutes}:{seconds}"
 
     lcd_line_1 = datetime.now().strftime(today_format) + "\n"
-    lcd_line_2 = f"{datetime.now().strftime('%a')}     {hours}:{minutes}:{seconds}"
     return lcd_line_1 + lcd_line_2
 
 
@@ -91,11 +104,26 @@ def play_alarm(lcd, tone, duration):
     p.terminate()
 
 
+def toggle_backlight(event):
+    global BACKLIGHT_STATUS
+    BACKLIGHT_STATUS = not BACKLIGHT_STATUS
+    GPIO.output(BACKLIGHT, BACKLIGHT_STATUS)
+
+
+def safe_exit(lcd):
+    lcd.clear()
+    lcd.message = "Goodbye!"
+    sleep(2)
+    GPIO.output(BACKLIGHT, False)
+    lcd.clear()
+    exit(0)
+
+
 def main():
     lcd_columns = 16
     lcd_rows = 2
 
-    ALARM_TIME, TONE, DURATION = load_config("settings.json")
+    ALARM_TIME, TONE, DURATION, WEEKDAYS_ONLY = load_config("settings.json")
 
     # Initialize the buttons
     GPIO.setmode(GPIO.BCM)
@@ -104,7 +132,13 @@ def main():
     GPIO.setup(BLUE_BUTTON, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
     GPIO.setup(RED_BUTTON, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
 
+    # Backlight Toggle
+    GPIO.setup(BACKLIGHT, GPIO.OUT)
+    GPIO.output(BACKLIGHT, BACKLIGHT_STATUS)
+    GPIO.add_event_detect(GREEN_BUTTON, GPIO.RISING, callback=toggle_backlight)
+
     # Initialise the lcd class
+    global lcd
     lcd = characterlcd.Character_LCD_Mono(lcd_rs, lcd_en, lcd_d4, lcd_d5, lcd_d6,
                                           lcd_d7, lcd_columns, lcd_rows)
     lcd.clear()
@@ -116,27 +150,31 @@ def main():
             elif (datetime.now() + timedelta(seconds=1)).strftime("%H:%M:%S") == ALARM_TIME.strftime("%H:%M:%S"):
                 play_alarm(lcd, TONE, DURATION)
 
-            lcd.message = get_times(ALARM_TIME.strftime("%H:%M"))
+            lcd.message = get_times(
+                ALARM_TIME.strftime("%H:%M"), WEEKDAYS_ONLY)
 
             i = 0
             while GPIO.input(RED_BUTTON) == GPIO.HIGH:
                 if i == 0:
                     lcd.clear()
 
-                lcd.message = f"Quitting in {3 - i}"
+                lcd.message = f"Shutting down {3 - i}"
 
                 if i == 3:
                     lcd.clear()
                     lcd.message = "Goodbye!"
-                    sleep(1)
+                    sleep(2)
+                    GPIO.output(BACKLIGHT, False)
                     lcd.clear()
+                    os.system("poweroff")
                     exit(0)
 
                 i += 1
                 sleep(1)
 
             while GPIO.input(BLUE_BUTTON) == GPIO.HIGH:
-                ALARM_TIME, TONE, DURATION = load_config("settings.json")
+                ALARM_TIME, TONE, DURATION, WEEKDAYS_ONLY = load_config(
+                    "settings.json")
                 lcd.clear()
                 lcd.message = "Reloaded Config"
                 sleep(2)
@@ -144,11 +182,7 @@ def main():
 
             sleep(1)
     except KeyboardInterrupt:
-        lcd.clear()
-        lcd.message = "Goodbye!"
-        sleep(2)
-        lcd.clear()
-        exit(0)
+        safe_exit(lcd)
 
 
 if __name__ == "__main__":
