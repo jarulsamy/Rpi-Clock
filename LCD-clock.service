@@ -1,0 +1,10 @@
+[Unit]
+Description=LCD Clock Python Script
+
+[Service]
+WorkingDirectory=/home/pi
+ExecStart=/usr/bin/python3 /home/pi/lcd.py > /dev/null 2>&1
+KillSignal=SIGINT
+
+[Install]
+WantedBy=default.target
