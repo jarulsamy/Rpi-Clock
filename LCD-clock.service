@@ -1,9 +1,9 @@
 [Unit]
-Description=LCD Clock Python Script
+Description=Rpi Clock Python Script
 
 [Service]
-WorkingDirectory=/home/pi
-ExecStart=/usr/bin/python3 /home/pi/lcd.py > /dev/null 2>&1
+WorkingDirectory=/home/pi/Rpi-Clock
+ExecStart=/usr/bin/python3 /home/pi/Rpi-Clock/lcd.py > /dev/null 2>&1
 KillSignal=SIGINT
 
 [Install]
