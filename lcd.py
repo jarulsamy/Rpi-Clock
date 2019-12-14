@@ -109,39 +109,46 @@ def main():
                                           lcd_d7, lcd_columns, lcd_rows)
     lcd.clear()
 
-    while True:
-        if datetime.now().strftime("%H:%M:%S") == ALARM_TIME.strftime("%H:%M:%S"):
-            play_alarm(lcd, TONE, DURATION)
-        elif (datetime.now() + timedelta(seconds=1)).strftime("%H:%M:%S") == ALARM_TIME.strftime("%H:%M:%S"):
-            play_alarm(lcd, TONE, DURATION)
+    try:
+        while True:
+            if datetime.now().strftime("%H:%M:%S") == ALARM_TIME.strftime("%H:%M:%S"):
+                play_alarm(lcd, TONE, DURATION)
+            elif (datetime.now() + timedelta(seconds=1)).strftime("%H:%M:%S") == ALARM_TIME.strftime("%H:%M:%S"):
+                play_alarm(lcd, TONE, DURATION)
 
-        lcd.message = get_times(ALARM_TIME.strftime("%H:%M"))
+            lcd.message = get_times(ALARM_TIME.strftime("%H:%M"))
 
-        i = 0
-        while GPIO.input(RED_BUTTON) == GPIO.HIGH:
-            if i == 0:
-                lcd.clear()
+            i = 0
+            while GPIO.input(RED_BUTTON) == GPIO.HIGH:
+                if i == 0:
+                    lcd.clear()
 
-            lcd.message = f"Quitting in {3 - i}"
+                lcd.message = f"Quitting in {3 - i}"
 
-            if i == 3:
-                lcd.clear()
-                lcd.message = "Goodbye!"
+                if i == 3:
+                    lcd.clear()
+                    lcd.message = "Goodbye!"
+                    sleep(1)
+                    lcd.clear()
+                    exit(0)
+
+                i += 1
                 sleep(1)
+
+            while GPIO.input(BLUE_BUTTON) == GPIO.HIGH:
+                ALARM_TIME, TONE, DURATION = load_config("settings.json")
                 lcd.clear()
-                exit(0)
+                lcd.message = "Reloaded Config"
+                sleep(2)
+                lcd.clear()
 
-            i += 1
             sleep(1)
-
-        while GPIO.input(BLUE_BUTTON) == GPIO.HIGH:
-            ALARM_TIME, TONE, DURATION = load_config("settings.json")
-            lcd.clear()
-            lcd.message = "Reloaded Config"
-            sleep(2)
-            lcd.clear()
-
-        sleep(1)
+    except KeyboardInterrupt:
+        lcd.clear()
+        lcd.message = "Goodbye!"
+        sleep(2)
+        lcd.clear()
+        exit(0)
 
 
 if __name__ == "__main__":
