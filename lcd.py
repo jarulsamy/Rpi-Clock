@@ -49,7 +49,8 @@ def get_times(ALARM_TIME):
     today_format = "%b %d  %H:%M:%S"
 
     tomorrow = date.today() + timedelta(days=1)
-    alarm_time = datetime.strptime(f"{tomorrow} {ALARM_TIME}", tomorrow_format) + timedelta(seconds=1)
+    alarm_time = datetime.strptime(
+        f"{tomorrow} {ALARM_TIME}", tomorrow_format) + timedelta(seconds=1)
     diff = alarm_time - datetime.now()
 
     days = diff.days
@@ -105,7 +106,7 @@ def main():
 
     # Initialise the lcd class
     lcd = characterlcd.Character_LCD_Mono(lcd_rs, lcd_en, lcd_d4, lcd_d5, lcd_d6,
-                                        lcd_d7, lcd_columns, lcd_rows)
+                                          lcd_d7, lcd_columns, lcd_rows)
     lcd.clear()
 
     while True:
