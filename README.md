@@ -1,11 +1,7 @@
 # Rpi-Clock
 ## Raspberry Pi 16x2 LCD Alarm Clock
 
----
-
 This software outputs a simple alarm display to a 16x2 LCD with optional and fully configurable alarm.
-
----
 
 ## Usage
 
@@ -36,7 +32,7 @@ Wire the LCD and buttons to the RPI according to these pin details.
 
 Of course these can be changed if you edit the pin numbers in `lcd.py`. This just worked best for me.
 
-#### Setup
+### Setup
 
 This software is only compatible with **Python 3.6** or greater.
 
@@ -69,7 +65,7 @@ sudo systemctl enable LCD-clock # Start the service on boot.
 sudo systemctl disable LCD-clock # Don't start the service on boot.
 ```
 
-#### Configure
+### Configure
 
 Edit the `settings.json` file to fit your needs. Times are in the 24hr scheme.
 
@@ -90,7 +86,6 @@ Edit the `settings.json` file to fit your needs. Times are in the 24hr scheme.
     }
 }
 ```
-
 
 ## Support
 

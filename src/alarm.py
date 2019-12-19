@@ -2,6 +2,7 @@ from datetime import datetime
 from time import sleep
 import subprocess
 import threading
+import logging
 
 
 class Alarm(threading.Thread):
@@ -22,21 +23,23 @@ class Alarm(threading.Thread):
         self.alarming = False
 
     def play_alarm(self):
-        i = 0
-        p = subprocess.Popen(["/usr/binmpg321", self.tone],
+        logging.info("Alarm ringing")
+        p = subprocess.Popen(["/usr/bin/mpg321", self.tone],
                              stdout=None, stderr=None)
         self.lcd.clear()
 
+        i = 0
+        # Flash ALARM + Current time while alarm is ringing
         while self.running and i < self.duration and p.poll() is None:
             self.alarming = True
-            lcd_line_1 = f"ALARM:  {datetime.now().strftime('%H:%M:%S')}"
-            self.lcd.message = lcd_line_1
+            current_time = datetime.now().strftime('%H:%M:%S')
+            self.lcd.message = f"ALARM: {current_time}"
 
             sleep(0.5)
             self.lcd.clear()
             sleep(0.5)
-
             i += 1
+        logging.info("Alarm stopped ringing")
 
         # Kill music subprocess and reset state
         self.alarming = False

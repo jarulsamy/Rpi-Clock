@@ -6,6 +6,7 @@ import adafruit_character_lcd.character_lcd as characterlcd
 import RPi.GPIO as GPIO
 import subprocess
 import digitalio
+import logging
 import board
 import json
 
@@ -71,8 +72,9 @@ def get_formatted_times(ALARM_TIME, weekdays_only=False, enabled=True):
     alarm_time = datetime.strptime(
         f"{next_alarm} {ALARM_TIME}", tomorrow_format) + timedelta(seconds=1)
     diff = alarm_time - datetime.now()
-
     hours, remainder = divmod(diff.seconds, 3600)
+
+    # Count number of days or hours:mins:seconds till alarm.
     if diff.days > 1:
         lcd_line_2 = f"{datetime.now().strftime('%a')}     {str(diff.days).zfill(2)}d {str(hours).zfill(2)}h"
     else:
@@ -81,36 +83,13 @@ def get_formatted_times(ALARM_TIME, weekdays_only=False, enabled=True):
         minutes = str(minutes).zfill(2)
         seconds = str(seconds).zfill(2)
         lcd_line_2 = f"{datetime.now().strftime('%a')}     {hours}:{minutes}:{seconds}"
-
     lcd_line_1 = datetime.now().strftime(today_format) + "\n"
+
+    # Leave empty space if alar is disabled.
     if not enabled:
         lcd_line_2 = datetime.now().strftime('%a')
 
     return lcd_line_1 + lcd_line_2
-
-
-def play_alarm(lcd, tone, duration):
-
-    i = 0
-    lcd.clear()
-
-    p = subprocess.Popen(["mpg321", tone], stdout=None, stderr=None)
-
-    while i < duration and p.poll() is None:
-        # Stop alarm on button press
-        if GPIO.input(BLUE_BUTTON) == GPIO.HIGH:
-            p.terminate()
-            return
-
-        lcd_line_1 = f"ALARM:  {datetime.now().strftime('%H:%M:%S')}"
-        lcd.message = lcd_line_1
-
-        sleep(0.5)
-        lcd.clear()
-        sleep(0.5)
-
-        i += 1
-    p.terminate()
 
 
 def toggle_backlight(event):
@@ -151,23 +130,32 @@ def main():
     GPIO.output(BACKLIGHT, BACKLIGHT_STATUS)
     GPIO.add_event_detect(GREEN_BUTTON, GPIO.RISING, callback=toggle_backlight)
 
-    # Initialise the lcd class
+    # Initialize the lcd object
     lcd = characterlcd.Character_LCD_Mono(lcd_rs, lcd_en, lcd_d4, lcd_d5, lcd_d6,
                                           lcd_d7, LCD_COLUMNS, LCD_ROWS)
     lcd.clear()
 
+    # Initialize logger
+    logging.basicConfig("clock.log", format='%(asctime)s - %(message)s',
+                        datefmt='%d-%b-%y %H:%M:%S', level=logging.INFO)
+
     alarm = Alarm(ALARM_TIME, lcd, TONE, DURATION)
     if ENABLED:
         alarm.start()
+        logging.INFO("Started - Alarm ENABLED")
 
     try:
         while True:
             # Don't overwrite alarm text with stock times
+            # Ensure backlight is on during alarm
             while alarm.alarming:
                 # Stop the alarm with blue button press.
                 while GPIO.input(BLUE_BUTTON) == GPIO.HIGH:
                     alarm.stop_alarm()
-                    message(lcd, "Stopped Alarm")
+                    message(lcd, "STOPPED ALARM")
+                    logging.INFO("Stopped alarm from BLUE button.")
+                    BACKLIGHT_STATUS = True
+                    GPIO.output(BACKLIGHT, BACKLIGHT_STATUS)
                 sleep(1)
 
             # Grab and display time
@@ -181,6 +169,7 @@ def main():
                         lcd.clear()
                     lcd.message = f"Shutting down {3 - i}"
                     if i == 3:
+                        logging.INFO("Poweroff from RED button.")
                         safe_exit(lcd, alarm)
                     sleep(1)
 
@@ -193,11 +182,17 @@ def main():
                 if ENABLED:
                     alarm = Alarm(ALARM_TIME, lcd, TONE, DURATION)
                     alarm.start()
+                    logging.INFO("Reloaded Config - Alarm ENABLED.")
+                else:
+                    logging.INFO("Reloaded Config - Alarm DISABLED.")
                 message(lcd, "Reloaded Config")
             sleep(1)
 
     except KeyboardInterrupt:
         safe_exit(lcd, alarm)
+
+    except Exception as e:
+        logging.FATAL("Exception in main loop", exc_info=True)
 
 
 if __name__ == "__main__":
