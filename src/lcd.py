@@ -4,7 +4,6 @@
 
 import adafruit_character_lcd.character_lcd as characterlcd
 import RPi.GPIO as GPIO
-import subprocess
 import digitalio
 import logging
 import board
@@ -85,7 +84,7 @@ def get_formatted_times(ALARM_TIME, weekdays_only=False, enabled=True):
         lcd_line_2 = f"{datetime.now().strftime('%a')}     {hours}:{minutes}:{seconds}"
     lcd_line_1 = datetime.now().strftime(today_format) + "\n"
 
-    # Leave empty space if alar is disabled.
+    # Leave empty space if alarm is disabled.
     if not enabled:
         lcd_line_2 = datetime.now().strftime('%a')
 
@@ -136,13 +135,13 @@ def main():
     lcd.clear()
 
     # Initialize logger
-    logging.basicConfig("clock.log", format='%(asctime)s - %(message)s',
+    logging.basicConfig(filename="clock.log", format='%(asctime)s - %(message)s',
                         datefmt='%d-%b-%y %H:%M:%S', level=logging.INFO)
 
     alarm = Alarm(ALARM_TIME, lcd, TONE, DURATION)
     if ENABLED:
         alarm.start()
-        logging.INFO("Started - Alarm ENABLED")
+        logging.info("Started - Alarm ENABLED")
 
     try:
         while True:
@@ -153,7 +152,7 @@ def main():
                 while GPIO.input(BLUE_BUTTON) == GPIO.HIGH:
                     alarm.stop_alarm()
                     message(lcd, "STOPPED ALARM")
-                    logging.INFO("Stopped alarm from BLUE button.")
+                    logging.info("Stopped alarm from BLUE button.")
                     BACKLIGHT_STATUS = True
                     GPIO.output(BACKLIGHT, BACKLIGHT_STATUS)
                 sleep(1)
@@ -169,7 +168,7 @@ def main():
                         lcd.clear()
                     lcd.message = f"Shutting down {3 - i}"
                     if i == 3:
-                        logging.INFO("Poweroff from RED button.")
+                        logging.info("Poweroff from RED button.")
                         safe_exit(lcd, alarm)
                     sleep(1)
 
@@ -182,17 +181,17 @@ def main():
                 if ENABLED:
                     alarm = Alarm(ALARM_TIME, lcd, TONE, DURATION)
                     alarm.start()
-                    logging.INFO("Reloaded Config - Alarm ENABLED.")
+                    logging.info("Reloaded Config - Alarm ENABLED.")
                 else:
-                    logging.INFO("Reloaded Config - Alarm DISABLED.")
+                    logging.info("Reloaded Config - Alarm DISABLED.")
                 message(lcd, "Reloaded Config")
             sleep(1)
 
     except KeyboardInterrupt:
         safe_exit(lcd, alarm)
 
-    except Exception as e:
-        logging.FATAL("Exception in main loop", exc_info=True)
+    except Exception:
+        logging.fatal("Exception in main loop", exc_info=True)
 
 
 if __name__ == "__main__":
