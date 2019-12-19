@@ -1,0 +1,9 @@
+{
+    "ALARM": {
+        "ENABLED": "True",
+        "TIME": "06:00:00",
+        "TONE": "BIB.mp3",
+        "DURATION": "60",
+        "WEEKDAYS_ONLY": "False"
+    }
+}

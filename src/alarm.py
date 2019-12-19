@@ -2,7 +2,6 @@ from datetime import datetime
 from time import sleep
 import subprocess
 import threading
-import os
 
 
 class Alarm(threading.Thread):
@@ -24,7 +23,8 @@ class Alarm(threading.Thread):
 
     def play_alarm(self):
         i = 0
-        p = subprocess.Popen(["mpg321", self.tone], stdout=None, stderr=None)
+        p = subprocess.Popen(["/usr/binmpg321", self.tone],
+                             stdout=None, stderr=None)
         self.lcd.clear()
 
         while self.running and i < self.duration and p.poll() is None:
@@ -52,7 +52,7 @@ class Alarm(threading.Thread):
             now = datetime.now()
             if (now.hour == self.hour and now.minute == self.minute and now.second == self.second):
                 self.play_alarm()
-            sleep(0.1)
+            sleep(0.5)
 
     def kill(self):
         self.running = False
