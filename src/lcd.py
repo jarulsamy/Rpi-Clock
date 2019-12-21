@@ -134,6 +134,7 @@ def safe_exit(lcd, alarm):
 
 
 def main():
+    global BACKLIGHT_STATUS
     ALARM_TIME, TONE, DURATION, WEEKDAYS_ONLY, ENABLED = load_config(SETTINGS)
 
     # Initialize the buttons
