@@ -2,6 +2,7 @@ from datetime import datetime
 from time import sleep
 import subprocess
 import threading
+import logging
 
 
 class Alarm(threading.Thread):
@@ -22,6 +23,7 @@ class Alarm(threading.Thread):
         self.alarming = False
 
     def play_alarm(self):
+        logging.info("Alarm Started Ringing")
         i = 0
         p = subprocess.Popen(["/usr/binmpg321", self.tone],
                              stdout=None, stderr=None)
@@ -39,6 +41,7 @@ class Alarm(threading.Thread):
             i += 1
 
         # Kill music subprocess and reset state
+        logging.info("Alarm Stopped Ringing")
         self.alarming = False
         p.terminate()
 

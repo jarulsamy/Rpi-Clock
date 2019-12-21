@@ -1,11 +1,24 @@
 #!/usr/bin/python3
 
-# 16x2 LCD Alarm
+"""
+A script that displays alarm clock information to a
+16x2 LCD display, with optional alarm. All configurable
+from a handy settings.json file.
+"""
 
+__author__ = "Joshua Arulsamy"
+__license__ = "GPL"
+__version__ = "1.0.0"
+__maintainer__ = "Joshua Arulsamy"
+__email__ = "joshua.gf.arul@gmail.com"
+__status__ = "Production"
+
+# 16x2 LCD Alarm
 import adafruit_character_lcd.character_lcd as characterlcd
 import RPi.GPIO as GPIO
 import subprocess
 import digitalio
+import logging
 import board
 import json
 
@@ -44,6 +57,11 @@ GREEN_BUTTON = 17
 
 BACKLIGHT_STATUS = True
 SETTINGS = "settings.json"
+
+START_TEXT = "Started"
+STOP_TEXT = "Stopped"
+
+LOGGING_LEVEL = logging.INFO
 
 
 def load_config(filename):
@@ -117,6 +135,7 @@ def toggle_backlight(event):
     global BACKLIGHT_STATUS
     BACKLIGHT_STATUS = not BACKLIGHT_STATUS
     GPIO.output(BACKLIGHT, BACKLIGHT_STATUS)
+    logging.info(f"Toggled Backlight -> {BACKLIGHT_STATUS}")
 
 
 def message(lcd, message):
@@ -133,6 +152,7 @@ def safe_exit(lcd, alarm):
     sleep(2)
     GPIO.output(BACKLIGHT, False)
     lcd.clear()
+    logging.info(STOP_TEXT)
     exit(0)
 
 
@@ -160,6 +180,11 @@ def main():
     if ENABLED:
         alarm.start()
 
+    # Setup the logger
+    logging.basicConfig(filename="Rpi-Clock.log", level=LOGGING_LEVEL,
+                        format='%(asctime)s - %(message)s', datefmt='%d-%b-%y %H:%M:%S')
+    logging.info(START_TEXT)
+
     try:
         while True:
             # Don't overwrite alarm text with stock times
@@ -173,6 +198,7 @@ def main():
             # Grab and display time
             lcd.message = get_formatted_times(
                 ALARM_TIME.strftime("%H:%M"), weekdays_only=WEEKDAYS_ONLY, enabled=ENABLED)
+            logging.debug("Updated time")
 
             # Power off if red button is held for 3 seconds
             while GPIO.input(RED_BUTTON) == GPIO.HIGH:
@@ -188,16 +214,23 @@ def main():
             while GPIO.input(BLUE_BUTTON) == GPIO.HIGH and not alarm.alarming:
                 ALARM_TIME, TONE, DURATION, WEEKDAYS_ONLY, ENABLED = load_config(
                     SETTINGS)
-
                 alarm.kill()
+
                 if ENABLED:
+                    logging.info("Config Reloaded - Alarm Enabled")
                     alarm = Alarm(ALARM_TIME, lcd, TONE, DURATION)
                     alarm.start()
+                else:
+                    logging.info("Config Reloaded - Alarm Disabled")
+
                 message(lcd, "Reloaded Config")
             sleep(1)
 
     except KeyboardInterrupt:
         safe_exit(lcd, alarm)
+
+    except Exception:
+        logging.fatal("Exception occured", exc_info=True)
 
 
 if __name__ == "__main__":

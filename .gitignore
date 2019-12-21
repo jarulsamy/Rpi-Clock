@@ -1,4 +1,5 @@
 *.mp3
-*.vscode
-*.pytest_cache
-__pycache__
+*.vscode/
+*.pytest_cache/
+__pycache__/
+*.log
