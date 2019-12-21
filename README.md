@@ -1,11 +1,8 @@
 # Rpi-Clock
+
 ## Raspberry Pi 16x2 LCD Alarm Clock
 
----
-
 This software outputs a simple alarm display to a 16x2 LCD with optional and fully configurable alarm.
-
----
 
 ## Usage
 
@@ -15,36 +12,37 @@ Wire the LCD and buttons to the RPI according to these pin details.
 <tr><th>Buttons</th><th>LCD</th></tr>
 <tr><td>
 
-| Button  | RPI BCM Pin |
-|  :---:  |    :---:    |
-| RED     | 22          |
-| GREEN   | 27          |
-| BLUE    | 17          |
+| Button | RPI BCM Pin |
+| :----: | :---------: |
+|   RED  |      22     |
+|  GREEN |      27     |
+|  BLUE  |      17     |
 
 </td><td>
 
 | LCD Pin | RPI BCM Pin |
-|  :---:  |    :---:    |
-| RS      | 18          |
-| EN      | 23          |
-| D4      | 24          |
-| D5      | 25          |
-| D6      | 8           |
-| D7      | 7           |
+| :-----: | :---------: |
+|    RS   |      18     |
+|    EN   |      23     |
+|    D4   |      24     |
+|    D5   |      25     |
+|    D6   |      8      |
+|    D7   |      7      |
 
 </td></tr> </table>
 
 Of course these can be changed if you edit the pin numbers in `lcd.py`. This just worked best for me.
 
-#### Setup
+### Setup
 
 This software is only compatible with **Python 3.6** or greater.
 
 Install the Adafruit Python CharLCD python library. Unfortunately it has been deprecated and is no longer updated in favor of the newer AdaFruit circuit python library. It is still hosted [here.](https://github.com/adafruit/Adafruit_Python_CharLCD). This software will eventually be ported to a newer library.
 
->Ensure all the dependencies are installed to the **SYSTEM** python3 (`/usr/bin/python3` in most cases), otherwise you will not be able to access the GPIO pins.
+> Ensure all the dependencies are installed to the **SYSTEM** python3 (`/usr/bin/python3` in most cases), otherwise you will not be able to access the GPIO pins.
 
 Install `mpg321`:
+
 ```bash
 sudo apt install mpg321
 ```
@@ -69,7 +67,7 @@ sudo systemctl enable LCD-clock # Start the service on boot.
 sudo systemctl disable LCD-clock # Don't start the service on boot.
 ```
 
-#### Configure
+### Configure
 
 Edit the `settings.json` file to fit your needs. Times are in the 24hr scheme.
 
@@ -91,12 +89,11 @@ Edit the `settings.json` file to fit your needs. Times are in the 24hr scheme.
 }
 ```
 
-
 ## Support
 
 Reach out to me at one of the following places!
 
-- Email (Best) at joshua.gf.arul@gmail.com
-- Twitter at <a href="http://twitter.com/joshuaa9088" target="_blank">`@joshuaa9088`</a>
+-   Email (Best) at joshua.gf.arul@gmail.com
+-   Twitter at <a href="http://twitter.com/joshuaa9088" target="_blank">`@joshuaa9088`</a>
 
----
+* * *
