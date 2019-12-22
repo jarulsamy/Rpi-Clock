@@ -83,7 +83,7 @@ def get_formatted_times(ALARM_TIME, weekdays_only=False, enabled=True):
 
     next_alarm = date.today() + timedelta(days=1)
     if weekdays_only and next_alarm.weekday() > 4:
-        next_alarm += timedelta(days=(6 - next_alarm.weekday()))
+        next_alarm += timedelta(days=(6 - next_alarm.weekday() + 2))
 
     alarm_time = datetime.strptime(
         f"{next_alarm} {ALARM_TIME}", tomorrow_format) + timedelta(seconds=1)
