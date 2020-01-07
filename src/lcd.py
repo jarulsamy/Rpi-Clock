@@ -1,4 +1,5 @@
 #!/usr/bin/python3
+# -*- coding: utf-8 -*-
 
 """
 A script that displays alarm clock information to a
@@ -17,6 +18,7 @@ __status__ = "Production"
 import adafruit_character_lcd.character_lcd as characterlcd
 import RPi.GPIO as GPIO
 import digitalio
+import requests
 import logging
 import board
 import json
@@ -61,6 +63,7 @@ START_TEXT = "Started"
 STOP_TEXT = "Stopped"
 
 LOGGING_LEVEL = logging.INFO
+REST_ENDPOINT = "http://127.0.0.1/api/v1.0/temps"
 
 
 def load_config(filename):
@@ -91,14 +94,22 @@ def get_formatted_times(ALARM_TIME, weekdays_only=False, enabled=True):
     hours, remainder = divmod(diff.seconds, 3600)
 
     # Count number of days or hours:mins:seconds till alarm.
+    try:
+        r = requests.request("GET", REST_ENDPOINT)
+        r = r.json()
+        temp = r["temps"]["fahrenheit"]["value"]
+        temp = str(int(round(float(temp), 0)))
+    except requests.exceptions.ConnectionError:
+        temp = 0
+
     if diff.days > 1:
-        lcd_line_2 = f"{datetime.now().strftime('%a')}     {str(diff.days).zfill(2)}d {str(hours).zfill(2)}h"
+        lcd_line_2 = f"{datetime.now().strftime('%a')} {temp.zfill(2)[:1]}F {str(diff.days).zfill(2)}d {str(hours).zfill(2)}h"
     else:
         minutes, seconds = divmod(remainder, 60)
         hours = str(hours).zfill(2)
         minutes = str(minutes).zfill(2)
         seconds = str(seconds).zfill(2)
-        lcd_line_2 = f"{datetime.now().strftime('%a')}     {hours}:{minutes}:{seconds}"
+        lcd_line_2 = f"{datetime.now().strftime('%a')} {str(temp).zfill(2)}F {hours}:{minutes}:{seconds}"
     lcd_line_1 = datetime.now().strftime(today_format) + "\n"
 
     # Leave empty space if alarm is disabled.
